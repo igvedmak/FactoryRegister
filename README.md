@@ -20,7 +20,7 @@ private:
 
 int main() {
     // Create an instance of FactoryRegister with appropriate template arguments
-    FactoryRegister<Person, std::string> personRegistry;
+    Utils::FactoryRegister<Person, std::string> personRegistry;
 
     // Register instances of the Person class with the registry
     personRegistry.add("John", []() { return std::make_unique<Person>("John Doe", 35); });
