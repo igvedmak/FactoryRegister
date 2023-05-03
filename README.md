@@ -31,8 +31,8 @@ int main() {
     auto jane = personRegistry.generate("Jane");
 
     // Use the created instances
-    std::cout << john->name() << " is " << john->age() << " years old.\n";
-    std::cout << jane->name() << " is " << jane->age() << " years old.\n";
+    std::cout << john.value()->name() << " is " << john.value()->age() << " years old.\n";
+    std::cout << jane.value()->name() << " is " << jane.value()->age() << " years old.\n";
 
     return 0;
 }
