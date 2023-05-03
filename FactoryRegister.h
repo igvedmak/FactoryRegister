@@ -1,86 +1,100 @@
 #include <memory>
 #include <unordered_map>
 #include <functional>
+#include <optional>
 
+/**
+ * @brief                                   A factory register for generating instances of a templated class using a key.
+ * 
+ * @tparam                                  Instance The class to be instantiated.
+ * @tparam Key                              The key type used to generate the instance.
+ * @tparam Pointer                          The pointer type to the instance.
+ */
 template<typename Instance, typename Key, typename Pointer = std::unique_ptr<Instance>>
 class FactoryRegister {
 private:
-    using functionType = std::function<Pointer()>;
 
+    /**
+     * @brief                               Define a type alias for the function type that the factory will store.
+     *
+     */
+    using functionType = std::function<Pointer()>;
+    
+    /**
+     * @brief                               The implementation of the FactoryRegister that holds the map of keys 
+     *                                      and instance generators.
+     */
     struct Impl {
 
         /**
-         * @brief                       This function adds key - value to \c _funcManager.
+         * @brief                           Add an instance generator function for a given key.
          * 
-         * @tparam INSTANCE             Key of isntance.
-         * @param key                   Key for the relevant instance.
-         * @param instance              Instance we want to instert. 
+         * @param key                       The key for the instance generator function.
+         * @param func                      The instance generator function.
          */
-        template<class INSTANCE>
         inline void add(Key const& key, 
-                        INSTANCE&& instance) { this->_funcManager.try_emplace(key, std::forward<INSTANCE>(instance)); }
+                        functionType func) {
+            _functions.try_emplace(key, std::move(func));
+        }
 
         /**
-         * @brief                       This function returns relevant collector by key.
+         * @brief                           Generate an instance for a given key.
          * 
-         * @param key                   Key for relevant collector.
-         * @return Pointer              Pointer to relevant collector. 
+         * @param key                       The key to generate the instance for.
+         * @return std::optional<Pointer>   An optional pointer to the generated instance. If the key is not found,
+         *                                  an empty optional is returned.
          */
-        Pointer generate(Key const& key) const {
-            const auto ptr = this->_funcManager.find(key);
-            if (ptr != this->_funcManager.end()) {
-                return ptr->second();
+        std::optional<Pointer> generate(Key const& key) const {
+            if (auto iter = _functions.find(key); iter != _functions.end()) {
+                return iter->second();
             }
-            return nullptr;
+            return std::nullopt;
         }
 
     private:
 
         /**
-         * @brief                       A map that holds keys that will be received from configuration 
-         *                              and instances of collectors relevant to configuration.
+         * @brief                           Store the function map in an unordered_map for constant-time lookup by key.
+         *
          */
-        std::unordered_map<std::string, functionType> _funcManager;
+        std::unordered_map<Key, functionType> _functions;
     };
 
     /**
-     * @brief                           Singleton of Impl struct.
+     * @brief                               Get the singleton instance of the implementation.
      * 
-     * @return                          \c - Impl& - Singleton of Impl struct.
+     * @return Impl&                        The singleton instance of the implementation.
      */
-    static Impl& getInstance() {
-        static Impl _instance{};
-        return _instance;
+    static Impl& getImpl() {
+        static Impl instance;
+        return instance;
     }
 
 public:
-
     /**
-     * @brief                           C-Tor.
+     * @brief                               C-Tor.
+     * 
      */
     FactoryRegister() = default;
+    /**
+     * @brief                               Add an instance generator function for a given key.
+     * 
+     * @param key                           The key for the instance generator function.
+     * @param func                          The instance generator function.
+     */
+    inline void add(Key const& key, 
+                    functionType func) {
+        getImpl().add(key, std::move(func));
+    }
 
     /**
-     * @brief                           This function adds isntance to map of instance \c (_funcManager).    
+     * @brief                               Generate an instance for a given key.
      * 
-     * @tparam INSTANCE                 Key of isntance.
-     * 
-     * @param key                       Key for the relevant instance.
-     * @param instance                  Instance we want to instert. 
+     * @param key                           The key to generate the instance for.
+     * @return std::optional<Pointer>       An optional pointer to the generated instance. If the key is not found,
+     *                                      an empty optional is returned.
      */
-    template<class INSTANCE>
-    inline void add(Key const& key, 
-                    INSTANCE&& instance) { 
-        getInstance().add(key, std::forward<INSTANCE>(instance)); 
-    }
-    
-    /**
-     * @brief                           This function creates relevant instance by relevant key this function gets.
-     * 
-     * @param key                       Key we want to find and create.
-     * @return Pointer                  Pointer to relevant instance.
-     */
-    inline Pointer generate(Key const& key) const { 
-        return getInstance().generate(key); 
+    inline std::optional<Pointer> generate(Key const& key) const {
+        return getImpl().generate(key);
     }
 };
