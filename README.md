@@ -1,5 +1,5 @@
 # FactoryRegister
-An implementation of factory pattern in C++ using templates and smart pointers.
+An implementation of factory pattern in C++11 using templates and smart pointers.
 Example usage:
 
 ```using namespace expbr;
